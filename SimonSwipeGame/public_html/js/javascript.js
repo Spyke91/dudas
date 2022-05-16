@@ -4,6 +4,19 @@ function assignEvents() {
     document.getElementById("start").addEventListener('click', startGame);
 }
 
+let sequence;
+let round = 1;
+let sequenceNr = 0;
+let clickedNr = 0
+let elementId;
+let previousColor;
+let interval;
+let interTime;
+let score = 0;
+let seconds = 0;
+let minute = 0;
+let level;
+
 function startGame() {
     disableElements();
     setInnerHTML();
@@ -13,10 +26,10 @@ function startGame() {
     drawField(width, height);
 
     const range = document.getElementById("level").value;
-    const level = range * 5;
-    const sequence = generateSequence(width, height, level);
-    sequence.forEach(element => console.log(element));
-    let cells = document.getElementsByName("cell");
+    level = range * 5;
+    sequence = generateSequence(width, height, level);
+    
+    let cells = document.getElementsByName("cellName");
     enableEventsField(cells, level, sequence);
 
     playGame(cells, width, height, sequence);
@@ -69,18 +82,41 @@ function randomIntFromInterval(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-function enableEventsField(cells, level, sequence) {
+function enableEventsField(cells) {
     for (i = 0; i < cells.length; i++) {
         cells[i].addEventListener('mousedown', check);
     }
 }
 
-function check(event, level, sequence) {
+function check(event) {
     let coords = event.target.id.split('_');
-    let x = coords[0];
-    let y = coords[1];
-    let guessedCells = 0;
-    document.getElementById("score").innerHTML = "Score: " + guessedCells;
+    let x = parseInt(coords[0]);
+    let y = parseInt(coords[1]);
+    let success = sequence[clickedNr][0] === x && sequence[clickedNr][1] === y;
+
+    console.log(success)
+    if(success){
+        score++;
+        document.getElementById("score").innerHTML = "Score: " + score;
+        if(clickedNr+1 === round){
+            round++;
+            if(round <= level){
+                sequenceNr = 0;
+                clickedNr = 0;
+                newRound();
+            }else{
+                console.log('se acabó el juego');
+                clearInterval(interTime);
+            }
+        }else{
+            clickedNr++;
+        }
+    }else{
+        clearInterval(interTime);
+        console.log('CAGASTE');
+    }
+
+    // document.getElementById("score").innerHTML = "Score: " + guessedCells;
 }
 
 function getWinner(guessedCells, sequence) {
@@ -100,50 +136,49 @@ function generateSequence(width, height, level) {
     return sequence;
 }
 
-function playGame(cells, width, height, sequence) {
-    let seconds = 0;
-    let minute = 0;
-    //setInterval(countUpTimer, 1000, seconds, minute);
-
+function playGame(cells, width, height) {
     let correct = true;
+    
+    interTime = setInterval(countUpTimer, 1000);
 
-    let roundNr = 0;
-    let i = setInterval(function () {
-        let x = sequence[roundNr][0];
-        let y = sequence[roundNr][1];
-        let elementId = x + "_" + y;
-        const previousColor = document.getElementById(elementId).style.backgroundColor;
-        document.getElementById(elementId).style.backgroundColor = "red";
-        
-        setTimeout(getOriginalColor, 1000, elementId, previousColor);
-        roundNr++;
+    newRound();
+}
 
-    }, 1000);
+function newRound(){
+    //disableEventsField(cells);
+    interval = setInterval(showElement, 1000);
+}
 
-    if (roundNr === sequence.length) {
-        clearInterval(i);
+function showElement () {
+    if(sequenceNr>0){
+        setOriginalColor(elementId, previousColor);
     }
 
+    if(sequenceNr < round){
+        let x = sequence[sequenceNr][0];
+        let y = sequence[sequenceNr][1];
+        elementId = x + "_" + y;
 
-
-    //disableEventsField(cells);
+        previousColor = document.getElementById(elementId).style.backgroundColor;
+        document.getElementById(elementId).style.backgroundColor = "red";
+        sequenceNr++;
+    }else{
+        setOriginalColor(elementId, previousColor);
+        clearInterval(interval);
+    }
 }
 
-function showElement(elementId) {
-    document.getElementById(elementId).style.backgroundColor = "red";
-}
-
-function getOriginalColor(elementId, previousColor){
+function setOriginalColor(elementId, previousColor){
     document.getElementById(elementId).style.backgroundColor = previousColor;
 }
 
-function countUpTimer(seconds, minute) {
-    seconds += 1;
+function countUpTimer() {
     if (seconds === 60) {
         seconds = 0;
         minute += 1;
     }
     document.getElementById("crono").innerHTML = "Seconds: " + minute + ":" + seconds;
+    seconds++;
 }
 
 function disableEventsField(cells) {
@@ -151,9 +186,3 @@ function disableEventsField(cells) {
         cells[i].removeEventListener('mousedown', check);
     }
 }
-
-
-
-
-
-
