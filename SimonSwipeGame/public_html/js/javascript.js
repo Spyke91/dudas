@@ -12,22 +12,20 @@ function startGame() {
     const height = document.getElementById("rows").value;
     drawField(width, height);
 
-    let cells = document.getElementsByName("cell");
-    enableEventsField(cells);
-
     const range = document.getElementById("level").value;
     const level = range * 5;
+    const sequence = generateSequence(width, height, level);
+    sequence.forEach(element => console.log(element));
+    let cells = document.getElementsByName("cell");
+    enableEventsField(cells, level, sequence);
 
-    const gameSequence = generateSequence(width, height, level);
-    gameSequence.forEach(element => console.log(element));
-    playGame(cells, width, height, gameSequence);
+    playGame(cells, width, height, sequence);
 }
 
 function disableElements() {
     document.getElementById("rows").disabled = true;
     document.getElementById("columns").disabled = true;
     document.getElementById("level").disabled = true;
-	document.getElementById("start").disabled = true;
 }
 
 function setInnerHTML() {
@@ -71,18 +69,24 @@ function randomIntFromInterval(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-function enableEventsField(cells) {
+function enableEventsField(cells, level, sequence) {
     for (i = 0; i < cells.length; i++) {
         cells[i].addEventListener('mousedown', check);
     }
 }
 
-function check(event) {
+function check(event, level, sequence) {
     let coords = event.target.id.split('_');
     let x = coords[0];
     let y = coords[1];
-    document.getElementById("message").innerHTML =
-            "The button (" + x + "," + y + ") has been clicked.";
+    let guessedCells = 0;
+    document.getElementById("score").innerHTML = "Score: " + guessedCells;
+}
+
+function getWinner(guessedCells, sequence) {
+    if (guessedCells === sequence.length) {
+        document.getElementById("message").innerHTML = "Winner!";
+    }
 }
 
 function generateSequence(width, height, level) {
@@ -97,17 +101,21 @@ function generateSequence(width, height, level) {
 }
 
 function playGame(cells, width, height, sequence) {
+    let seconds = 0;
+    let minute = 0;
+    //setInterval(countUpTimer, 1000, seconds, minute);
+
     let correct = true;
 
-    var roundNr = 0;
-    var i = setInterval(function () {
+    let roundNr = 0;
+    let i = setInterval(function () {
         let x = sequence[roundNr][0];
         let y = sequence[roundNr][1];
         let elementId = x + "_" + y;
         const previousColor = document.getElementById(elementId).style.backgroundColor;
         document.getElementById(elementId).style.backgroundColor = "red";
-
-        document.getElementById(elementId).style.backgroundColor = previousColor;
+        
+        setTimeout(getOriginalColor, 1000, elementId, previousColor);
         roundNr++;
 
     }, 1000);
@@ -116,11 +124,26 @@ function playGame(cells, width, height, sequence) {
         clearInterval(i);
     }
 
+
+
     //disableEventsField(cells);
 }
 
 function showElement(elementId) {
     document.getElementById(elementId).style.backgroundColor = "red";
+}
+
+function getOriginalColor(elementId, previousColor){
+    document.getElementById(elementId).style.backgroundColor = previousColor;
+}
+
+function countUpTimer(seconds, minute) {
+    seconds += 1;
+    if (seconds === 60) {
+        seconds = 0;
+        minute += 1;
+    }
+    document.getElementById("crono").innerHTML = "Seconds: " + minute + ":" + seconds;
 }
 
 function disableEventsField(cells) {
